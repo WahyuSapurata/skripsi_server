@@ -16,6 +16,12 @@ const User = mongoose.Schema({
   nomor_pengguna: {
     type: String,
   },
+  image: {
+    type: String,
+  },
+  url: {
+    type: String,
+  },
   password: {
     type: String,
   },

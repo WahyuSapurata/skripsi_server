@@ -1,6 +1,8 @@
 import User from "../models/UserModel.js";
 import bcrypt from "bcrypt";
 import Jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs";
 
 export const getUser = async (req, res) => {
   try {
@@ -8,6 +10,15 @@ export const getUser = async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
   }
 };
 
@@ -38,8 +49,20 @@ export const login = async (req, res) => {
     const userId = user.id;
     const nama_pengguna = user.nama_pengguna;
     const email_pengguna = user.email_pengguna;
+    const name_bisnis = user.name_bisnis;
+    const alamat_bisnis = user.alamat_bisnis;
+    const nomor_pengguna = user.nomor_pengguna;
+    const url = user.url;
     const accessToken = Jwt.sign(
-      { userId, nama_pengguna, email_pengguna },
+      {
+        userId,
+        nama_pengguna,
+        email_pengguna,
+        name_bisnis,
+        alamat_bisnis,
+        nomor_pengguna,
+        url,
+      },
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: "20s",
@@ -51,6 +74,52 @@ export const login = async (req, res) => {
     res.json({ accessToken });
   } catch (error) {
     res.status(404).json({ message: "email pengguna tidak ditemukan" });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  const user = await User.findById({
+    _id: req.params.id,
+  });
+  if (!user) return res.status(404).json({ msg: "No Data Found" });
+
+  let fileName = "";
+  if (req.files == null) {
+    fileName = user.image;
+  } else {
+    const file = req.files.file;
+    const fileSize = file.data.length;
+    const ext = path.extname(file.name);
+    fileName = file.md5 + ext;
+    const allowedType = [".png", ".jpg", ".jpeg"];
+
+    if (!allowedType.includes(ext.toLowerCase()))
+      return res.status(422).json({ msg: "Invalid Images" });
+    if (fileSize > 5000000)
+      return res.status(422).json({ msg: "Image must be less than 5 MB" });
+
+    if (user.image == null) {
+    } else {
+      const filepath = `./public/images/${user.image}`;
+      fs.unlinkSync(filepath);
+    }
+
+    file.mv(`./public/images/${fileName}`, (err) => {
+      if (err) return res.status(500).json({ msg: err.message });
+    });
+  }
+  const url = `${req.protocol}://${req.get("host")}/images/${fileName}`;
+
+  try {
+    req.body["image"] = fileName;
+    req.body["url"] = url;
+    await User.updateOne({ _id: req.params.id }, { $set: req.body });
+    const user = await User.findById({
+      _id: req.params.id,
+    });
+    res.status(200).json({ message: "user update success", user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
