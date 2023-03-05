@@ -123,6 +123,31 @@ export const updateUser = async (req, res) => {
   }
 };
 
+export const forgotPassword = async (req, res) => {
+  const user = await User.findOne({
+    email_pengguna: req.body.email_pengguna,
+  });
+  if (!user) return res.status(400).json({ message: "email tidak terdaftar" });
+
+  const { password, confPassword } = req.body;
+  if (password !== confPassword)
+    return res
+      .status(400)
+      .json({ message: "password dan confirm password tidak cocok" });
+  const salt = await bcrypt.genSalt();
+  const hashPassword = await bcrypt.hash(password, salt);
+  try {
+    const email = user.id;
+    req.body["password"] = hashPassword;
+    await User.findByIdAndUpdate(email, {
+      $set: { password: req.body["password"] },
+    });
+    res.status(200).json({ message: "update password success" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const logout = async (req, res) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];

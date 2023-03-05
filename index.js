@@ -5,6 +5,7 @@ import fileUpload from "express-fileupload";
 import dotenv from "dotenv";
 import UserRoute from "./routes/UserRoute.js";
 import UserManagementRoute from "./routes/UserManagementRoute.js";
+import JurnalRoute from "./routes/JurnalRoute.js";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(fileUpload());
 app.use(express.static("public"));
-app.use(UserRoute, UserManagementRoute);
+app.use(UserRoute, UserManagementRoute, JurnalRoute);
 
 app.listen(process.env.PORT, () =>
   console.log("server up and running port", process.env.PORT)
