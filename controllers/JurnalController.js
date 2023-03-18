@@ -4,7 +4,7 @@ import fs from "fs";
 
 export const getJurnal = async (req, res) => {
   try {
-    const junal = await Jurnal.find();
+    const junal = await Jurnal.find().sort({ _id: -1 });
     res.status(200).json(junal);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -21,22 +21,19 @@ export const getJurnalById = async (req, res) => {
 };
 
 export const addJurnal = async (req, res) => {
-  let fileName = "";
-  if (req.files === null) {
-    const file = req.files.file;
-    const fileSize = file.data.length;
-    const ext = path.extname(file.name);
-    const fileName = file.md5 + ext;
-    const allowedType = [".png", ".jpg", ".jpeg"];
+  const file = req.files.file;
+  const fileSize = file.data.length;
+  const ext = path.extname(file.name);
+  const fileName = file.md5 + ext;
+  const allowedType = [".png", ".jpg", ".jpeg"];
 
-    if (!allowedType.includes(ext.toLowerCase()))
-      return res.status(422).json({ msg: "Invalid Images" });
-    if (fileSize > 5000000)
-      return res.status(422).json({ msg: "Image must be less than 5 MB" });
-    file.mv(`./public/jurnal/${fileName}`, async (err) => {
-      if (err) return res.status(500).json({ msg: err.message });
-    });
-  }
+  if (!allowedType.includes(ext.toLowerCase()))
+    return res.status(422).json({ msg: "Invalid Images" });
+  if (fileSize > 5000000)
+    return res.status(422).json({ msg: "Image must be less than 5 MB" });
+  file.mv(`./public/jurnal/${fileName}`, async (err) => {
+    if (err) return res.status(500).json({ msg: err.message });
+  });
   const url = `${req.protocol}://${req.get("host")}/jurnal/${fileName}`;
   try {
     req.body["image"] = fileName;
